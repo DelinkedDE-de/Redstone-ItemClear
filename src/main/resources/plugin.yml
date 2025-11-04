@@ -1,0 +1,49 @@
+name: Redstone-ItemClear
+version: '1.0-SNAPSHOT'
+main: de.delinkedde.redstoneItemClear.RedstoneItemClear
+api-version: '1.21'
+author: delinked.de
+description: Intelligentes TPS-Management-System für SkyBlock Server
+website: https://delinked.de
+
+commands:
+  ric:
+    description: Haupt-Command für Redstone ItemClear
+    usage: /ric <status|analyze|reload|info|help>
+    aliases: [redstoneitemclear, riclear]
+
+  riclag:
+    description: Lag-Test Command (NUR FÜR TESTING!)
+    usage: /riclag <start|stop|items|mobs|status>
+    aliases: [lagtest]
+
+permissions:
+  redstoneitemclear.*:
+    description: Alle Permissions für Redstone ItemClear
+    default: op
+    children:
+      redstoneitemclear.status: true
+      redstoneitemclear.analyze: true
+      redstoneitemclear.reload: true
+      redstoneitemclear.notifications: true
+      redstoneitemclear.lagtest: true
+
+  redstoneitemclear.status:
+    description: Zeigt den aktuellen TPS-Status an
+    default: op
+
+  redstoneitemclear.analyze:
+    description: Analysiert Problemzonen
+    default: op
+
+  redstoneitemclear.reload:
+    description: Lädt die Konfiguration neu
+    default: op
+
+  redstoneitemclear.notifications:
+    description: Erhält In-Game-Benachrichtigungen über Maßnahmen
+    default: op
+
+  redstoneitemclear.lagtest:
+    description: Kann Lag-Tests durchführen (NUR FÜR DEVELOPMENT!)
+    default: op

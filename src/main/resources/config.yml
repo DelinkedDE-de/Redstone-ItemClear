@@ -1,0 +1,487 @@
+# ╔═══════════════════════════════════════════════════════════════════════════╗
+# ║                    Redstone ItemClear - Config                            ║
+# ║              Intelligentes TPS Management System v1.0                     ║
+# ║                   Entwickelt für SkyBlock Server                          ║
+# ╚═══════════════════════════════════════════════════════════════════════════╝
+#
+# WICHTIG: Das Plugin bereinigt NUR die Chunks die als Problemzonen
+#          identifiziert wurden - NICHT den gesamten Server!
+#
+# ═════════════════════════════════════════════════════════════════════════════
+
+# ===== TPS MONITORING =====
+# Überwacht die Server-Performance und löst bei niedrigen TPS Aktionen aus
+tps-monitor:
+  enabled: true
+
+  # Wie oft sollen die TPS geprüft werden? (in Sekunden)
+  check-interval: 10
+
+  # TPS-Schwellenwerte für verschiedene Warnstufen
+  # Bei Unterschreitung werden entsprechende Maßnahmen eingeleitet
+  thresholds:
+    warning: 18.0    # Stufe 1: Nur Warnung, keine Aktionen
+    critical: 15.0   # Stufe 2: Leichte Maßnahmen (Items entfernen)
+    emergency: 12.0  # Stufe 3: Schwere Maßnahmen (Items, Mobs, Redstone)
+    # Stufe 4 (Notfall) wird bei < 10.0 TPS ausgelöst
+
+# ═════════════════════════════════════════════════════════════════════════════
+
+# ===== PROBLEM-ANALYSE =====
+# Definiert ab wann ein Chunk als "Problemzone" gilt
+analysis:
+  # Wie viele Chunks um eine Problemzone herum sollen auch geprüft werden?
+  chunk-scan-radius: 5
+
+  # Grenzwerte für Problem-Erkennung
+  # Ein Chunk wird zur Problemzone wenn EINER dieser Werte überschritten wird
+  thresholds:
+    # Maximale ENTITIES (alle lebenden/nicht-lebenden Objekte) pro Chunk
+    # Zählt: Mobs, Items, Minecarts, Armor Stands, etc.
+    entities-per-chunk: 50
+
+    # Maximale MOBS (nur lebende Kreaturen) pro Chunk
+    # Zählt: Tiere, Monster, Villager, etc.
+    mobs-per-chunk: 30
+
+    # Maximale ITEMS AUF DEM BODEN pro Chunk
+    # WICHTIG: Hier zählen EINZELNE ITEM-ENTITIES, nicht Itemstacks!
+    # Beispiel: 64 Wheat auf dem Boden = 1 Item-Entity (wenn zusammengemerged)
+    #           64 einzelne Wheat = 64 Item-Entities
+    # Ein Chunk mit vielen Auto-Farmen kann schnell 100+ Item-Entities haben
+    items-per-chunk: 100
+
+    # Redstone-Aktivität (Events pro Sekunde im Chunk)
+    # Jedes Mal wenn Redstone seinen Zustand ändert = 1 Event
+    # Hopper-Clocks, Pistons, Observers können sehr viele Events erzeugen
+    redstone-activity: 20
+
+  # Welche Welten sollen überwacht werden?
+  # Leer lassen = ALLE Welten werden überwacht
+  # Liste angeben = NUR diese Welten werden überwacht
+  monitored-worlds:
+    - world
+    - world_nether
+    - world_the_end
+  # Beispiel für zusätzliche Welten:
+  #  - skyblock_world
+  #  - mining_world
+
+# ═════════════════════════════════════════════════════════════════════════════
+
+# ===== STUFEN-SYSTEM =====
+# Definiert welche Maßnahmen bei welchen TPS-Werten ergriffen werden
+# ⚠️  Alle Maßnahmen werden NUR in Problemzonen durchgeführt!
+action-levels:
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # STUFE 1: WARNUNG (TPS < 18.0)
+  # ───────────────────────────────────────────────────────────────────────────
+  warning:
+    tps-threshold: 18.0
+    # Verfügbare Aktionen:
+    #   - discord-notification      = Discord-Benachrichtigung senden
+    #   - clear-excess-items        = Items über Limit entfernen
+    #   - clear-all-items           = ALLE Items entfernen
+    #   - remove-excess-mobs        = Mobs über Limit entfernen
+    #   - remove-passive-mobs       = Alle passiven Mobs entfernen
+    #   - disable-redstone          = Redstone in Problemzonen deaktivieren
+    #   - disable-all-redstone      = Redstone in ALLEN Problemzonen deaktivieren
+    actions:
+      - discord-notification
+    # Nur informieren, keine Maßnahmen
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # STUFE 2: LEICHTE MAẞNAHMEN (TPS < 15.0)
+  # ───────────────────────────────────────────────────────────────────────────
+  moderate:
+    tps-threshold: 15.0
+    actions:
+      - discord-notification
+      - clear-excess-items        # Entferne Items über dem Limit
+    # Limits für diese Stufe
+    limits:
+      # Wie viele Item-ENTITIES dürfen pro Chunk bleiben?
+      # WICHTIG: Item-Entities, nicht Itemstacks!
+      # Beispiel: 50 = maximal 50 Items auf dem Boden pro Chunk
+      items-per-chunk: 50
+    # Einschränkungen in Problemzonen
+    restrictions:
+      disable-plant-growth: false   # Pflanzenwachstum NICHT stoppen
+      disable-redstone: false       # Redstone NICHT blockieren
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # STUFE 3: SCHWERE MAẞNAHMEN (TPS < 12.0)
+  # ───────────────────────────────────────────────────────────────────────────
+  severe:
+    tps-threshold: 12.0
+    actions:
+      - discord-notification
+      - clear-excess-items        # Aggressivere Item-Entfernung
+      - remove-excess-mobs        # Mobs über Limit entfernen
+      - disable-redstone          # Redstone in Problemzonen aus
+    limits:
+      # Nur noch 20 Item-Entities pro Chunk erlaubt
+      items-per-chunk: 20
+      # Nur noch 15 Mobs pro Chunk erlaubt
+      mobs-per-chunk: 15
+      # Wie lange soll Redstone deaktiviert bleiben? (in Sekunden)
+      # Nach dieser Zeit wird Redstone automatisch reaktiviert
+      # (außer TPS sind immer noch niedrig)
+      redstone-disable-duration: 300  # 5 Minuten
+    # Einschränkungen in Problemzonen
+    restrictions:
+      disable-plant-growth: true    # Pflanzenwachstum STOPPEN
+      disable-redstone: true         # Redstone BLOCKIEREN
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # STUFE 4: NOTFALL-MAẞNAHMEN (TPS < 10.0)
+  # ───────────────────────────────────────────────────────────────────────────
+  emergency:
+    tps-threshold: 10.0
+    actions:
+      - discord-notification
+      - clear-all-items           # ALLE Items entfernen (nicht nur überschüssige!)
+      - remove-passive-mobs       # ALLE passiven Mobs entfernen
+      - disable-all-redstone      # Redstone in ALLEN Problemzonen aus
+    limits:
+      # Sollen hostile Mobs (Monster) behalten werden?
+      # false = auch Monster werden entfernt
+      # true = nur passive Mobs werden entfernt
+      keep-hostile-mobs: false
+      # Redstone bleibt länger deaktiviert
+      redstone-disable-duration: 600  # 10 Minuten
+    # Einschränkungen in Problemzonen
+    restrictions:
+      disable-plant-growth: true    # Pflanzenwachstum STOPPEN
+      disable-redstone: true         # Redstone BLOCKIEREN
+      disable-mob-spawning: true     # Mob-Spawning BLOCKIEREN
+
+# ═════════════════════════════════════════════════════════════════════════════
+
+# ===== GESCHÜTZTE & CUSTOM REGIONEN =====
+protected-regions:
+  enabled: true
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # WHITELIST - Regionen die NIEMALS bereinigt werden
+  # ───────────────────────────────────────────────────────────────────────────
+  # Diese Bereiche sind komplett vom Plugin ausgenommen.
+  # Keine Items/Mobs werden entfernt, keine Einschränkungen werden angewendet.
+  #
+  # Format:
+  #   - type: "world"              # Immer "world" für Kreis-Regionen
+  #     world: "weltname"          # Name der Welt (exakt wie im server.properties)
+  #     center-x: 0                # X-Koordinate des Zentrums
+  #     center-z: 0                # Z-Koordinate des Zentrums
+  #     radius: 100                # Radius in Blöcken
+  #     reason: "Beschreibung"     # Optionale Beschreibung (für Logs)
+  #
+  whitelist:
+    # Beispiel 1: Spawn-Bereich schützen
+    - type: "world"
+      world: "world"
+      center-x: 0
+      center-z: 0
+      radius: 100
+      reason: "Spawn-Bereich - Hauptstadt"
+
+    # Beispiel 2: Event-Bereich schützen
+    - type: "world"
+      world: "world"
+      center-x: 5000
+      center-z: 5000
+      radius: 200
+      reason: "Event-Arena"
+
+    # Beispiel 3: Admin-Bereich schützen
+    - type: "world"
+      world: "world"
+      center-x: -1000
+      center-z: -1000
+      radius: 50
+      reason: "Admin-Testgebiet"
+
+    # Beispiel 4: Nether-Spawn schützen
+    - type: "world"
+      world: "world_nether"
+      center-x: 0
+      center-z: 0
+      radius: 64
+      reason: "Nether-Spawn"
+
+    # Füge hier weitere Regionen hinzu:
+    # - type: "world"
+    #   world: "deine_welt"
+    #   center-x: 1234
+    #   center-z: 5678
+    #   radius: 150
+    #   reason: "Deine Beschreibung"
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # CUSTOM REGIONS - Regionen mit eigenen Grenzwerten
+  # ───────────────────────────────────────────────────────────────────────────
+  # Diese Bereiche haben spezielle Grenzwerte, die von den globalen abweichen.
+  # Nützlich für Farm-Bereiche die mehr Items/Mobs erlauben sollen.
+  #
+  # Format:
+  #   - name: "Name"                    # Eindeutiger Name für die Region
+  #     world: "weltname"               # Name der Welt
+  #     center-x: 1000                  # X-Koordinate des Zentrums
+  #     center-z: 1000                  # Z-Koordinate des Zentrums
+  #     radius: 50                      # Radius in Blöcken
+  #     custom-thresholds:              # Eigene Grenzwerte (optional)
+  #       entities-per-chunk: 100       # Überschreibt globalen Wert
+  #       mobs-per-chunk: 50            # Überschreibt globalen Wert
+  #       items-per-chunk: 200          # Überschreibt globalen Wert
+  #       redstone-activity: 40         # Überschreibt globalen Wert
+  #
+  custom-regions:
+    # Beispiel 1: Farm-Zone mit höheren Limits
+    - name: "Farm-Zone Nord"
+      world: "world"
+      center-x: 1000
+      center-z: 1000
+      radius: 50
+      custom-thresholds:
+        items-per-chunk: 200      # Doppelt so viele Items erlaubt
+        mobs-per-chunk: 50        # Mehr Mobs für Tier-Farmen
+        redstone-activity: 40     # Mehr Redstone für Auto-Farmen
+
+    # Beispiel 2: Mob-Farm mit speziellen Limits
+    - name: "Mob-Grinder"
+      world: "world"
+      center-x: -2000
+      center-z: 3000
+      radius: 30
+      custom-thresholds:
+        mobs-per-chunk: 100       # Viele Mobs für Grinder
+        items-per-chunk: 300      # Viele Items für Drops
+
+    # Beispiel 3: Redstone-Testgebiet
+    - name: "Redstone-Labor"
+      world: "world"
+      center-x: 500
+      center-z: -500
+      radius: 40
+      custom-thresholds:
+        redstone-activity: 100    # Sehr viel Redstone erlaubt
+        entities-per-chunk: 150   # Mehr Entities für Contraptions
+
+    # Füge hier weitere Custom-Regionen hinzu:
+    # - name: "Deine Region"
+    #   world: "world"
+    #   center-x: 0
+    #   center-z: 0
+    #   radius: 50
+    #   custom-thresholds:
+    #     items-per-chunk: 150
+    #     mobs-per-chunk: 40
+
+# ===== Discord Integration =====
+discord:
+  enabled: true
+  webhook-url: ""
+  # Nachricht-Einstellungen
+  notifications:
+    warning-enabled: true
+    action-taken-enabled: true
+    include-coordinates: true
+    include-world: true
+    include-stats: true
+  # Embed-Farben
+  colors:
+    warning: 16776960  # Gelb
+    critical: 16744448  # Orange
+    emergency: 16711680  # Rot
+    success: 5763719    # Grün
+
+# ═════════════════════════════════════════════════════════════════════════════
+
+# ===== BEREICHS-EINSCHRÄNKUNGEN =====
+# ⚠️  WICHTIG: Diese werden NUR in Problemzonen angewendet!
+# ⚠️  Der Rest des Servers ist NICHT betroffen!
+chunk-restrictions:
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # PFLANZENWACHSTUM (Plant Growth)
+  # ───────────────────────────────────────────────────────────────────────────
+  plant-growth:
+    enabled: true
+
+    # Welche Pflanzentypen sollen betroffen sein?
+    # Liste aller verfügbaren Material-Namen (Minecraft 1.21.4):
+    #
+    # CROPS (Feldfrüchte):
+    #   - WHEAT, CARROTS, POTATOES, BEETROOTS
+    #
+    # STEMS (Kürbis/Melone):
+    #   - MELON_STEM, PUMPKIN_STEM, ATTACHED_MELON_STEM, ATTACHED_PUMPKIN_STEM
+    #
+    # PFLANZEN:
+    #   - SUGAR_CANE, CACTUS, BAMBOO, BAMBOO_SAPLING
+    #   - KELP, KELP_PLANT, SEAGRASS, TALL_SEAGRASS
+    #   - SWEET_BERRY_BUSH, CAVE_VINES, CAVE_VINES_PLANT
+    #   - TWISTING_VINES, TWISTING_VINES_PLANT
+    #   - WEEPING_VINES, WEEPING_VINES_PLANT
+    #
+    # NETHER:
+    #   - NETHER_WART, WARPED_FUNGUS, CRIMSON_FUNGUS
+    #   - WARPED_ROOTS, CRIMSON_ROOTS
+    #
+    # BÄUME/SAPLINGS:
+    #   - OAK_SAPLING, BIRCH_SAPLING, SPRUCE_SAPLING
+    #   - JUNGLE_SAPLING, ACACIA_SAPLING, DARK_OAK_SAPLING
+    #   - CHERRY_SAPLING, MANGROVE_PROPAGULE
+    #
+    # PILZE:
+    #   - BROWN_MUSHROOM, RED_MUSHROOM
+    #   - BROWN_MUSHROOM_BLOCK, RED_MUSHROOM_BLOCK
+    #
+    # SONSTIGES:
+    #   - COCOA, CHORUS_FLOWER, CHORUS_PLANT
+    #   - PITCHER_CROP, TORCHFLOWER_CROP
+    #   - GLOW_LICHEN, MOSS_BLOCK
+    #
+    affected-types:
+      # Standard Farm-Crops
+      - WHEAT
+      - CARROTS
+      - POTATOES
+      - BEETROOTS
+      # Kürbis/Melone
+      - MELON_STEM
+      - PUMPKIN_STEM
+      # Schnellwachsende Pflanzen (oft in Autofarmen)
+      - SUGAR_CANE
+      - CACTUS
+      - BAMBOO
+      - KELP
+      # Sonstiges
+      - SWEET_BERRY_BUSH
+      - NETHER_WART
+      # Füge hier weitere Pflanzen hinzu wenn nötig:
+      # - CAVE_VINES
+      # - COCOA
+      # - etc.
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # REDSTONE-BLOCKIERUNG
+  # ───────────────────────────────────────────────────────────────────────────
+  redstone:
+    enabled: true
+
+    # Welche Redstone-Komponenten sollen blockiert werden?
+    # Liste aller verfügbaren Redstone-Komponenten (Minecraft 1.21.4):
+    #
+    # GRUND-KOMPONENTEN:
+    #   - REDSTONE_WIRE (Redstone Staub)
+    #   - REDSTONE_TORCH, REDSTONE_WALL_TORCH
+    #   - REDSTONE_BLOCK
+    #
+    # LOGIK-KOMPONENTEN:
+    #   - REPEATER (Verstärker)
+    #   - COMPARATOR (Komparator)
+    #   - REDSTONE_LAMP
+    #   - DAYLIGHT_DETECTOR
+    #
+    # BEWEGUNG:
+    #   - PISTON (Kolben)
+    #   - STICKY_PISTON (Klebriger Kolben)
+    #   - SLIME_BLOCK, HONEY_BLOCK
+    #
+    # CONTAINER/TRANSPORT:
+    #   - HOPPER (oft Performance-Problem!)
+    #   - DROPPER
+    #   - DISPENSER
+    #   - CHEST (für Redstone-Signale)
+    #   - TRAPPED_CHEST
+    #
+    # SENSOREN:
+    #   - OBSERVER (kann sehr viele Events erzeugen!)
+    #   - LECTERN
+    #   - TARGET
+    #   - SCULK_SENSOR
+    #   - CALIBRATED_SCULK_SENSOR
+    #
+    # TÜREN/TORE:
+    #   - IRON_DOOR, IRON_TRAPDOOR
+    #   - OAK_DOOR, SPRUCE_DOOR, etc. (alle Holztüren)
+    #   - OAK_TRAPDOOR, SPRUCE_TRAPDOOR, etc.
+    #   - OAK_FENCE_GATE, SPRUCE_FENCE_GATE, etc.
+    #
+    # SCHIENEN:
+    #   - POWERED_RAIL
+    #   - ACTIVATOR_RAIL
+    #   - DETECTOR_RAIL
+    #
+    # SONSTIGES:
+    #   - NOTE_BLOCK
+    #   - LEVER, STONE_BUTTON, etc.
+    #   - STONE_PRESSURE_PLATE, etc.
+    #   - TRIPWIRE, TRIPWIRE_HOOK
+    #   - TNT
+    #
+    block-types:
+      # Basis-Redstone
+      - REDSTONE_WIRE
+      - REPEATER
+      - COMPARATOR
+      # Bewegung (oft Performance-intensiv)
+      - PISTON
+      - STICKY_PISTON
+      # Container (Hopper = größtes Performance-Problem!)
+      - DISPENSER
+      - DROPPER
+      - HOPPER
+      # Sensoren (Observer kann viele Events erzeugen)
+      - OBSERVER
+      # Füge hier weitere Komponenten hinzu wenn nötig:
+      # - REDSTONE_LAMP
+      # - DAYLIGHT_DETECTOR
+      # - SCULK_SENSOR
+      # - NOTE_BLOCK
+      # etc.
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # MOB-SPAWNING
+  # ───────────────────────────────────────────────────────────────────────────
+  mob-spawning:
+    enabled: true
+
+    # Passive Mobs blockieren? (Tiere wie Kuh, Schaf, Schwein, Huhn, etc.)
+    # HINWEIS: Spawner, Breeding und Spawn-Eggs werden NICHT blockiert!
+    block-passive: true
+
+    # Hostile Mobs blockieren? (Monster wie Zombie, Skeleton, Creeper, etc.)
+    # Vorsicht: Kann Spieler-Farmen beeinträchtigen!
+    block-hostile: false
+
+# ===== Sonstige Einstellungen =====
+general:
+  # Debug-Modus für detaillierte Logs
+  debug: false
+  # Automatische Wiederherstellung nach TPS-Verbesserung
+  auto-recovery:
+    enabled: true
+    # TPS-Schwellenwert für Wiederherstellung
+    recovery-tps: 19.0
+    # Wartezeit bevor Redstone wieder aktiviert wird
+    recovery-delay: 60
+  # Benachrichtigungen im Chat
+  in-game-notifications:
+    enabled: true
+    # Nur für Spieler mit Permission
+    notify-ops: true
+  # WICHTIG: Bereichsspezifische Reinigung
+  # Das Plugin bereinigt NUR die Chunks die als Problemzonen identifiziert wurden
+  # NICHT den gesamten Server!
+  area-specific-cleanup: true
+
+# ===== Statistiken =====
+statistics:
+  enabled: true
+  # Speichere Statistiken für Analyse
+  track-events: true
+  # Logs in Datei schreiben
+  log-to-file: true
