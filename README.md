@@ -1,7 +1,7 @@
 # Redstone ItemClear
 
 > 🎵 **Weiteres Projekt:** Interessiert an einem **Discord Moderation & Musik Bot**?
-> Besuche [delinked.de](https://delinked.de) für mehr Informationen!
+> Besuche [delinkedde.de](https://delinkedde.de) für mehr Informationen!
 
 Ein intelligentes TPS-Management-System für Minecraft Spigot 1.21.4 Server, speziell entwickelt für SkyBlock-Server.
 
@@ -280,7 +280,7 @@ src/main/java/de/delinkedde/redstoneItemClear/
 Bei Fragen oder Problemen:
 - GitHub Issues: https://github.com/DelinkedDE-de/Redstone-ItemClear
 - Discord: DelinkedDE
-- Website: https://delinked.de
+- Website: https://delinkedde.de
 
 ## Lizenz
 
