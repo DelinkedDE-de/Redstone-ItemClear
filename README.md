@@ -286,7 +286,7 @@ Bei Fragen oder Problemen:
 
 **Proprietäre Lizenz - Alle Rechte vorbehalten**
 
-Copyright © 2024 delinked.de - Alle Rechte vorbehalten.
+Copyright © 2024 delinkedde.de - Alle Rechte vorbehalten.
 
 ### Nutzungsbedingungen
 
@@ -307,7 +307,7 @@ Dieses Plugin ist **nicht Open Source** und unterliegt den folgenden Bedingungen
 Dieses Plugin wird "wie besehen" bereitgestellt, ohne jegliche Garantie.
 Der Autor übernimmt keine Haftung für Schäden die durch die Nutzung entstehen.
 
-Für kommerzielle Lizenzen oder Sondergenehmigungen kontaktieren Sie: https://delinked.de
+Für kommerzielle Lizenzen oder Sondergenehmigungen kontaktieren Sie: https://delinkedde.de
 
 ---
 
