@@ -204,4 +204,29 @@ public class ConfigManager {
     public boolean shouldDisableMobSpawning(String level) {
         return config.getBoolean("action-levels." + level + ".restrictions.disable-mob-spawning", false);
     }
+
+    // ===== Mob Whitelist/Blacklist =====
+
+    /**
+     * Check if a mob type is whitelisted (should never be removed)
+     */
+    public boolean isMobWhitelisted(String mobType) {
+        List<String> whitelist = config.getStringList("mob-management.whitelist");
+        return whitelist != null && whitelist.contains(mobType.toUpperCase());
+    }
+
+    /**
+     * Check if a mob type is blacklisted (should always be removed)
+     */
+    public boolean isMobBlacklisted(String mobType) {
+        List<String> blacklist = config.getStringList("mob-management.blacklist");
+        return blacklist != null && blacklist.contains(mobType.toUpperCase());
+    }
+
+    /**
+     * Check if burning mobs should be removed automatically
+     */
+    public boolean shouldRemoveBurningMobs() {
+        return config.getBoolean("mob-management.remove-burning-mobs", false);
+    }
 }

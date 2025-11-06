@@ -90,7 +90,7 @@ Das Plugin reagiert automatisch mit verschiedenen Maßnahmen basierend auf den T
 
 ## Installation
 
-1. Download der `.jar`-Datei aus `build/libs/Redstone-ItemClear-1.0-SNAPSHOT.jar`
+1. Download der `.jar`-Datei aus `Redstone-ItemClear-1.0-SNAPSHOT.jar`
 2. In den `plugins` Ordner des Servers kopieren
 3. Server neu starten
 4. Config anpassen (siehe Konfiguration)
@@ -225,6 +225,62 @@ action-levels:
 - Spawner, Breeding und andere spezielle Spawn-Gründe bleiben unberührt
 - Getrennte Konfiguration für passive und hostile Mobs
 
+### Mob-Management (Whitelist/Blacklist)
+
+Du kannst spezifische Mob-Typen konfigurieren:
+
+**Whitelist** - Diese Mobs werden NIEMALS entfernt:
+```yaml
+mob-management:
+  whitelist:
+    - "VILLAGER"
+    - "ARMOR_STAND"
+    - "ITEM_FRAME"
+    - "HORSE"
+```
+
+**Blacklist** - Diese Mobs werden IMMER sofort entfernt:
+```yaml
+mob-management:
+  blacklist:
+    - "CREEPER"
+    - "TNT"
+    - "PHANTOM"
+```
+
+**Brennende Mobs** - Automatisch entfernen:
+```yaml
+mob-management:
+  remove-burning-mobs: true
+```
+
+#### Verfügbare Mob-Typen
+
+**Hostile Mobs:**
+- `ZOMBIE`, `SKELETON`, `CREEPER`, `SPIDER`, `CAVE_SPIDER`
+- `ENDERMAN`, `WITCH`, `BLAZE`, `GHAST`, `SLIME`
+- `MAGMA_CUBE`, `SILVERFISH`, `ENDERMITE`, `GUARDIAN`
+- `ELDER_GUARDIAN`, `SHULKER`, `PHANTOM`, `DROWNED`
+- `HUSK`, `STRAY`, `VEX`, `VINDICATOR`, `EVOKER`
+- `PILLAGER`, `RAVAGER`, `HOGLIN`, `ZOGLIN`, `PIGLIN_BRUTE`
+- `WITHER_SKELETON`, `ZOMBIE_VILLAGER`, `WARDEN`
+
+**Passive/Neutrale Mobs:**
+- `COW`, `PIG`, `SHEEP`, `CHICKEN`, `RABBIT`
+- `HORSE`, `DONKEY`, `MULE`, `LLAMA`, `CAT`, `DOG`
+- `VILLAGER`, `IRON_GOLEM`, `SNOW_GOLEM`
+- `BAT`, `SQUID`, `DOLPHIN`, `TURTLE`, `FOX`
+- `PANDA`, `POLAR_BEAR`, `BEE`, `AXOLOTL`, `GOAT`
+- `FROG`, `TADPOLE`, `ALLAY`, `SNIFFER`, `CAMEL`
+
+**Spezielle Entities:**
+- `ARMOR_STAND`, `ITEM_FRAME`, `GLOW_ITEM_FRAME`
+- `PAINTING`, `MINECART`, `BOAT`
+- `TNT`, `ENDER_CRYSTAL`, `ENDER_DRAGON`
+- `WITHER`, `EXPERIENCE_ORB`
+
+**Vollständige Liste:** [Spigot EntityType JavaDocs](https://hub.spigotmc.org/javadocs/spigot/org/bukkit/entity/EntityType.html)
+
 ### Protected Regions
 Definiere geschützte Bereiche, die nie bereinigt werden:
 
@@ -267,13 +323,23 @@ src/main/java/de/delinkedde/redstoneItemClear/
 - **API-Version:** 1.21
 - **Build-Tool:** Gradle 8.8
 
-## Geplante Features
+## Features
 
-- Web-Dashboard für Statistiken
+### ✅ Web-Dashboard
+- Live TPS-Monitoring mit Grafiken (Stunde/Tag/Woche)
+- Multi-Server Dashboard
+- Problem Zones Visualisierung mit Koordinaten
+- Sichere Authentifizierung mit In-Game Verifizierung
+- WebSocket Live-Updates
+
+**URLs:**
+- Login: `https://delinkedde.de/minecraft-login.html`
+- Dashboard: `https://delinkedde.de/minecraft-dashboard.html`
+
+### 🔜 Geplante Features
 - WorldGuard-Integration
 - PlotSquared-Integration
 - Erweiterte Statistik-Logs
-- Grafische Visualisierung von Problemzonen
 
 ## Support
 
@@ -286,7 +352,7 @@ Bei Fragen oder Problemen:
 
 **Proprietäre Lizenz - Alle Rechte vorbehalten**
 
-Copyright © 2024 delinkedde.de - Alle Rechte vorbehalten.
+Copyright © 2025 delinkedde.de - Alle Rechte vorbehalten.
 
 ### Nutzungsbedingungen
 

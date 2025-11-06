@@ -9,6 +9,8 @@ import de.delinkedde.redstoneItemClear.discord.DiscordWebhook;
 import de.delinkedde.redstoneItemClear.listener.RedstoneListener;
 import de.delinkedde.redstoneItemClear.manager.PerformanceManager;
 import de.delinkedde.redstoneItemClear.monitor.TPSMonitor;
+import de.delinkedde.redstoneItemClear.webpanel.WebPanelManager;
+import de.delinkedde.redstoneItemClear.command.WebPanelCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -34,6 +36,7 @@ public final class RedstoneItemClear extends JavaPlugin {
     private DiscordWebhook discordWebhook;
     private PerformanceManager performanceManager;
     private LagTestCommand lagTestCommand;
+    private WebPanelManager webPanelManager;
 
     @Override
     public void onEnable() {
@@ -114,6 +117,10 @@ public final class RedstoneItemClear extends JavaPlugin {
         // Registriere Performance Manager als TPS-Listener
         tpsMonitor.addListener(performanceManager);
 
+        // WebPanel Manager
+        webPanelManager = new WebPanelManager(this);
+        webPanelManager.initialize();
+
         getLogger().info("✓ Komponenten initialisiert");
     }
 
@@ -158,6 +165,11 @@ public final class RedstoneItemClear extends JavaPlugin {
         lagTestCommand = new LagTestCommand(this);
         getCommand("riclag").setExecutor(lagTestCommand);
         getCommand("riclag").setTabCompleter(lagTestCommand);
+
+        // WebPanel Command
+        WebPanelCommand webPanelCommand = new WebPanelCommand(webPanelManager);
+        getCommand("ricpanel").setExecutor(webPanelCommand);
+        getCommand("ricpanel").setTabCompleter(webPanelCommand);
 
         getLogger().info("✓ Commands registriert");
     }
@@ -206,5 +218,9 @@ public final class RedstoneItemClear extends JavaPlugin {
 
     public PerformanceManager getPerformanceManager() {
         return performanceManager;
+    }
+
+    public WebPanelManager getWebPanelManager() {
+        return webPanelManager;
     }
 }

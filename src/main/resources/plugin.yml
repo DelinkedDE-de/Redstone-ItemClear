@@ -17,6 +17,11 @@ commands:
     usage: /riclag <start|stop|items|mobs|status>
     aliases: [lagtest]
 
+  ricpanel:
+    description: WebPanel Authentication Command
+    usage: /ricpanel <verify|info|help>
+    aliases: [webpanel, panel]
+
 permissions:
   redstoneitemclear.*:
     description: Alle Permissions für Redstone ItemClear
@@ -27,6 +32,7 @@ permissions:
       redstoneitemclear.reload: true
       redstoneitemclear.notifications: true
       redstoneitemclear.lagtest: true
+      redstoneitemclear.webpanel: true
 
   redstoneitemclear.status:
     description: Zeigt den aktuellen TPS-Status an
@@ -46,4 +52,8 @@ permissions:
 
   redstoneitemclear.lagtest:
     description: Kann Lag-Tests durchführen (NUR FÜR DEVELOPMENT!)
+    default: op
+
+  redstoneitemclear.webpanel:
+    description: Zugriff auf das WebPanel
     default: op

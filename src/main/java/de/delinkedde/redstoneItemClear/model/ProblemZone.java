@@ -70,6 +70,16 @@ public class ProblemZone {
         return !problems.isEmpty();
     }
 
+    /**
+     * Returns the primary problem type (first in the list, or TOO_MANY_ENTITIES as fallback)
+     */
+    public ProblemType getProblemType() {
+        if (problems.isEmpty()) {
+            return ProblemType.TOO_MANY_ENTITIES; // Fallback
+        }
+        return problems.get(0);
+    }
+
     public String getCoordinates() {
         return String.format("X: %d, Z: %d", chunk.getX() << 4, chunk.getZ() << 4);
     }

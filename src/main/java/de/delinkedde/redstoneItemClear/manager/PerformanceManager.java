@@ -96,6 +96,9 @@ public class PerformanceManager implements TPSMonitor.TPSListener {
                                   ", Zonen=" + zones.size());
         }
 
+        // Report problem zones to WebPanel
+        reportProblemsToWebPanel(zones, level);
+
         // Führe Aktionen aus
         ActionExecutor.ActionResult result = executor.executeActions(level, zones);
 
@@ -113,6 +116,48 @@ public class PerformanceManager implements TPSMonitor.TPSListener {
             // Nur Warnung, keine Aktionen
             discord.sendTPSWarning(level, currentTPS, zones);
         }
+    }
+
+    /**
+     * Sendet Problem-Daten an das WebPanel
+     */
+    private void reportProblemsToWebPanel(List<ProblemZone> zones, ActionLevel level) {
+        if (plugin.getWebPanelManager() == null || !plugin.getWebPanelManager().isInitialized()) {
+            return;
+        }
+
+        for (ProblemZone zone : zones) {
+            String severity = determineSeverity(zone, level);
+            String problemType = zone.getProblemType().name();
+            int entityCount = zone.getItemCount() + zone.getMobCount();
+
+            plugin.getWebPanelManager().reportProblem(
+                zone.getChunk().getWorld().getName(),
+                zone.getChunk().getX(),
+                zone.getChunk().getZ(),
+                problemType,
+                severity,
+                entityCount
+            );
+        }
+    }
+
+    /**
+     * Bestimmt den Schweregrad basierend auf ActionLevel und Zone-Daten
+     */
+    private String determineSeverity(ProblemZone zone, ActionLevel level) {
+        if (level == ActionLevel.EMERGENCY) {
+            return "EMERGENCY";
+        } else if (level == ActionLevel.SEVERE) {
+            return "SEVERE";
+        } else if (level == ActionLevel.WARNING) {
+            // Check if zone has critical values
+            if (zone.getItemCount() > 500 || zone.getMobCount() > 100) {
+                return "SEVERE";
+            }
+            return "WARNING";
+        }
+        return "WARNING";
     }
 
     /**

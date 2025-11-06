@@ -485,3 +485,43 @@ statistics:
   track-events: true
   # Logs in Datei schreiben
   log-to-file: true
+
+# ===== Mob Management =====
+mob-management:
+  # Entferne brennende Mobs automatisch
+  remove-burning-mobs: true
+
+  # Whitelist: Diese Mobs werden NIEMALS entfernt
+  # Mob-Typen: https://hub.spigotmc.org/javadocs/spigot/org/bukkit/entity/EntityType.html
+  whitelist:
+    - "VILLAGER"
+    - "ARMOR_STAND"
+    - "ITEM_FRAME"
+    - "PAINTING"
+    # - "HORSE"
+    # - "DONKEY"
+    # - "MULE"
+
+  # Blacklist: Diese Mobs werden IMMER sofort entfernt (höchste Priorität)
+  blacklist:
+    # Beispiele für problematische Mobs:
+    # - "CREEPER"
+    # - "TNT"
+    # - "PHANTOM"
+    # - "SLIME"
+
+  # Hinweis: Mobs die weder in Whitelist noch Blacklist sind,
+  # werden nach den normalen TPS-Level Regeln behandelt
+
+# ===== WebPanel Integration =====
+webpanel:
+  # API URL für das WebPanel (NICHT ÄNDERN außer du hostest selbst)
+  api-url: "https://delinkedde.de/api/minecraft"
+  # Server Hostname/IP (wie Spieler sich verbinden)
+  hostname: "play.delinkedde.de"
+  # Server Anzeigename im Dashboard
+  display-name: "Mein Minecraft Server"
+  # API Key (wird automatisch generiert beim ersten Start)
+  api-key: ""
+  # Server ID (wird automatisch generiert)
+  server-id: ""

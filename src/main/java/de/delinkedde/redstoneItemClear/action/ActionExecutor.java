@@ -216,10 +216,33 @@ public class ActionExecutor {
         for (Entity entity : chunk.getEntities()) {
             if (entity instanceof Player) continue; // Spieler nie entfernen
 
+            if (!(entity instanceof LivingEntity)) continue; // Nur LivingEntities
+
+            LivingEntity livingEntity = (LivingEntity) entity;
+            String mobType = entity.getType().name();
+
+            // Skip mobs that are in whitelist (if configured)
+            if (config.isMobWhitelisted(mobType)) {
+                continue;
+            }
+
+            // Check blacklist - always remove blacklisted mobs
+            if (config.isMobBlacklisted(mobType)) {
+                entity.remove();
+                continue;
+            }
+
+            // Remove burning mobs (configurable)
+            if (config.shouldRemoveBurningMobs() && livingEntity.getFireTicks() > 0) {
+                entity.remove();
+                continue;
+            }
+
             if (entity instanceof Animals && !(entity instanceof Monster)) {
-                passiveMobs.add((LivingEntity) entity);
-            } else if (entity instanceof Monster) {
-                hostileMobs.add((LivingEntity) entity);
+                passiveMobs.add(livingEntity);
+            } else if (entity instanceof Monster || entity instanceof LivingEntity) {
+                // Include ALL mobs including Creeper, Zombies, Skeletons, etc.
+                hostileMobs.add(livingEntity);
             }
         }
 
