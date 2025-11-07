@@ -343,6 +343,144 @@ protected-regions:
 
 ---
 
+## WebPanel Konfiguration
+
+### Standalone Server (Ohne BungeeCord)
+
+```yaml
+webpanel:
+  api-url: "https://delinkedde.de/api/minecraft"
+  hostname: "play.delinkedde.de"          # Server-IP/Hostname
+  display-name: "Mein SkyBlock Server"    # Name im Dashboard
+  bungee-name: ""                         # Leer bei Standalone
+  api-key: ""                             # Auto-generiert
+  server-id: ""                           # Auto-generiert
+```
+
+---
+
+### BungeeCord Multi-Server Setup
+
+**Wichtig:** Der `bungee-name` MUSS mit dem Server-Namen in der BungeeCord `config.yml` übereinstimmen!
+
+**Lobby Server:**
+```yaml
+webpanel:
+  api-url: "https://delinkedde.de/api/minecraft"
+  hostname: "play.delinkedde.de"
+  display-name: ""           # Leer = "Lobby" (auto-generiert aus bungee-name)
+  bungee-name: "lobby"       # ← Name aus BungeeCord config.yml
+  api-key: ""                # Auto-generiert
+  server-id: ""              # Auto-generiert
+```
+
+**Survival Server:**
+```yaml
+webpanel:
+  api-url: "https://delinkedde.de/api/minecraft"
+  hostname: "play.delinkedde.de"
+  display-name: ""           # Leer = "Survival" (auto-generiert)
+  bungee-name: "survival"    # ← Name aus BungeeCord config.yml
+  api-key: ""                # Auto-generiert
+  server-id: ""              # Auto-generiert
+```
+
+**Creative Server:**
+```yaml
+webpanel:
+  api-url: "https://delinkedde.de/api/minecraft"
+  hostname: "play.delinkedde.de"
+  display-name: "Kreativ-Welt"  # Optional: Custom Name
+  bungee-name: "creative"        # ← Name aus BungeeCord config.yml
+  api-key: ""                    # Auto-generiert
+  server-id: ""                  # Auto-generiert
+```
+
+**Beispiel BungeeCord config.yml:**
+```yaml
+servers:
+  lobby:
+    address: localhost:25566
+
+  survival:
+    address: localhost:25567
+
+  creative:
+    address: localhost:25568
+```
+
+---
+
+### Display Name Generation
+
+**Automatische Generation:** Wenn `display-name` leer ist, wird der Name automatisch aus `bungee-name` generiert:
+
+| bungee-name | display-name (auto) |
+|-------------|---------------------|
+| `lobby` | `Lobby` |
+| `survival` | `Survival` |
+| `creative` | `Creative` |
+| `skyblock` | `Skyblock` |
+| `minigames` | `Minigames` |
+
+**Custom Display Name:** Du kannst auch einen eigenen Namen setzen:
+
+```yaml
+webpanel:
+  bungee-name: "skyblock"           # BungeeCord Server-Name
+  display-name: "SkyBlock Deluxe"   # Custom Name im Dashboard
+```
+
+---
+
+### Permissions für WebPanel
+
+**Permission vergeben:**
+```
+/lp user DelinkedDE permission set redstoneitemclear.webpanel true
+```
+
+**Gruppen-Permission (für alle Admins):**
+```
+/lp group admin permission set redstoneitemclear.webpanel true
+```
+
+**Permission prüfen:**
+```
+/lp user DelinkedDE permission check redstoneitemclear.webpanel
+```
+
+---
+
+### WebPanel Commands
+
+| Command | Beschreibung |
+|---------|--------------|
+| `/ricpanel verify <code>` | Code vom WebPanel verifizieren (Standalone) |
+| `/ricbungee verify <code>` | Code vom WebPanel verifizieren (BungeeCord) |
+| `/ricpanel info` | Zeigt Account-Info & Anleitung |
+| `/ricpanel help` | Zeigt Hilfe |
+
+---
+
+### WebPanel Workflow
+
+**Standalone Server:**
+1. Gehe zu: `https://delinkedde.de/minecraft-login.html`
+2. Username eingeben (z.B. `DelinkedDE`)
+3. Code erhalten (z.B. `AB12CD`)
+4. In-Game: `/ricpanel verify AB12CD`
+5. Dashboard öffnet sich automatisch
+
+**BungeeCord Network:**
+1. Gehe zu: `https://delinkedde.de/minecraft-login.html`
+2. Username eingeben (z.B. `DelinkedDE`)
+3. Code erhalten (z.B. `AB12CD`)
+4. Auf BELIEBIGEM Server: `/ricbungee verify AB12CD`
+5. Dashboard zeigt ALLE Server wo Permission vorhanden ist
+
+---
+
 ## Koordinaten finden
 
 ### In-Game Koordinaten ablesen:
@@ -359,6 +497,86 @@ Config:
 center-x: 1234
 center-z: 5678
 ```
+
+---
+
+## Manuelle Bereinigung & Einschränkungen
+
+### `/ric run` Command
+
+Das `/ric run` Command führt manuelle Bereinigungen durch und scannt:
+1. **Problemzonen** - Chunks die von der automatischen Analyse als problematisch erkannt wurden
+2. **Spieler-Chunks** - Alle geladenen Chunks im 8-Chunk Radius um ALLE Online-Spieler
+
+**Wichtig:**
+- Bereinigt ALLE gefundenen Chunks, unabhängig von Thresholds
+- Entity-Removal läuft auf Main-Thread für maximale Stabilität
+- Scannt mehr Chunks als automatische Analyse
+- Ideal für manuelle Lag-Behebung
+
+**Beispiele:**
+```bash
+/ric run items          # Nur Items entfernen
+/ric run mobs           # Nur Mobs entfernen
+/ric run redstone       # Nur Redstone deaktivieren
+/ric run plant          # Nur Pflanzenwachstum stoppen
+/ric run mobs,items     # Mehrere Aktionen
+/ric run all            # Alles bereinigen
+```
+
+**Ausgabe:**
+```
+Scanne 150 Chunks (25 Problemzonen + 125 Spieler-Chunks)...
+Entferne Mobs aus 87 Chunks...
+Mobs entfernt: 2459
+Chunks gescannt: 150
+Aktuelle TPS: 19.45
+```
+
+### `/ric enable` Command
+
+Reaktiviert temporär deaktivierte Chunk-Einschränkungen.
+
+**Wichtig:**
+- Einschränkungen sind nur im **RAM** gespeichert
+- Nach **Server-Restart** sind automatisch ALLE Einschränkungen aufgehoben
+- Zwei Bereiche: **Spieler-Nähe** (8-Chunk Radius) oder **Server-weit** (mit `all`)
+
+**Beispiele:**
+```bash
+/ric enable redstone            # Redstone in Spieler-Nähe aktivieren
+/ric enable redstone all        # Redstone server-weit aktivieren
+/ric enable plant              # Pflanzenwachstum in Spieler-Nähe aktivieren
+/ric enable mobs               # Mob-Spawning in Spieler-Nähe aktivieren
+/ric enable all                # Alle Einschränkungen in Spieler-Nähe aufheben
+/ric enable all all            # Alle Einschränkungen server-weit aufheben
+```
+
+**Ausgabe:**
+```
+Redstone in 12 Chunks wurde reaktiviert
+Redstone in 0 Chunks war bereits aktiv
+Gesamt: 12 Chunks untersucht
+```
+
+**Workflow:**
+1. Server laggt → Automatische Analyse deaktiviert Redstone/Plant Growth in Problemzonen
+2. Admin behebt Problem (z.B. entfernt Lag-Farm)
+3. Admin aktiviert Einschränkungen wieder: `/ric enable all all`
+
+### Chunk-Einschränkungen Persistenz
+
+| Ereignis | Status |
+|----------|--------|
+| Plugin Reload (`/ric reload`) | ✅ Einschränkungen bleiben aktiv |
+| Server Restart | ❌ Einschränkungen werden aufgehoben |
+| TPS-Recovery (Auto) | ✅ Einschränkungen werden automatisch aufgehoben |
+| Manuell (`/ric enable`) | ✅ Einschränkungen werden sofort aufgehoben |
+
+**Warum kein permanenter Storage?**
+- Einschränkungen sind als **temporäre Notfallmaßnahme** gedacht
+- Würde bei jedem Restart falsch-positive Chunks blockieren
+- Performance-Probleme sollten gelöst werden, nicht permanent blockiert
 
 ---
 

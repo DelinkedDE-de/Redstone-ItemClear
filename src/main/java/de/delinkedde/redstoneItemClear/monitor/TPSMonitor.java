@@ -132,7 +132,7 @@ public class TPSMonitor {
     }
 
     /**
-     * Gibt die aktuellen TPS zurück
+     * Gibt die aktuellen TPS zurück (cached value)
      */
     public double getCurrentTPS() {
         return currentTPS;
@@ -143,6 +143,15 @@ public class TPSMonitor {
      */
     public ActionLevel getCurrentLevel() {
         return currentLevel;
+    }
+
+    /**
+     * Ermittelt die aktuellen TPS des Servers LIVE (nicht cached)
+     * Verwendet die offizielle getTPS() Methode (Paper/Spigot 1.20.5+)
+     * Public method für direkten Zugriff (z.B. WebPanel reporting)
+     */
+    public double getLiveTPS() {
+        return getTPS();
     }
 
     /**

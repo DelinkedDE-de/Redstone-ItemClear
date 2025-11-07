@@ -154,7 +154,8 @@ public class LagTestCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean handleStatus(CommandSender sender) {
-        double[] tps = plugin.getServer().getTPS();
+        // Use TPSMonitor instead of Bukkit.getTPS() for Spigot compatibility
+        double tps = plugin.getTpsMonitor().getCurrentTPS();
 
         sender.sendMessage(ChatColor.GOLD + "=== Lag-Test Status ===");
         sender.sendMessage(ChatColor.YELLOW + "Aktiv: " +
@@ -164,7 +165,7 @@ public class LagTestCommand implements CommandExecutor, TabCompleter {
                 ChatColor.WHITE + lagIntensity + "/5");
         }
         sender.sendMessage(ChatColor.YELLOW + "Aktuelle TPS: " +
-            ChatColor.WHITE + String.format("%.2f", tps[0]));
+            ChatColor.WHITE + String.format("%.2f", tps));
         sender.sendMessage(ChatColor.YELLOW + "Plugin-Level: " +
             ChatColor.WHITE + plugin.getTpsMonitor().getCurrentLevel().getDisplayName());
 

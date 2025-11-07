@@ -240,9 +240,11 @@ public class ActionExecutor {
 
             if (entity instanceof Animals && !(entity instanceof Monster)) {
                 passiveMobs.add(livingEntity);
-            } else if (entity instanceof Monster || entity instanceof LivingEntity) {
-                // Include ALL mobs including Creeper, Zombies, Skeletons, etc.
+            } else if (entity instanceof Monster) {
+                // Hostile mobs: Creeper, Zombies, Skeletons, etc.
                 hostileMobs.add(livingEntity);
+            } else {
+                // Other LivingEntities (e.g., Villagers) are ignored here
             }
         }
 
@@ -515,6 +517,63 @@ public class ActionExecutor {
             plugin.getLogger().info(String.format("Alle Einschränkungen aufgehoben (Plant: %d, Mobs: %d Chunks)",
                 plantCount, mobCount));
         }
+    }
+
+    /**
+     * Reaktiviert Redstone in einem bestimmten Chunk
+     */
+    public boolean enableRedstoneInChunk(Chunk chunk) {
+        boolean wasDisabled = disabledRedstoneChunks.remove(chunk);
+        chunkDisableTimestamps.remove(chunk);
+        return wasDisabled;
+    }
+
+    /**
+     * Reaktiviert Plant Growth in einem bestimmten Chunk
+     */
+    public boolean enablePlantGrowthInChunk(Chunk chunk) {
+        boolean wasDisabled = disabledPlantGrowthChunks.remove(chunk);
+        plantGrowthDisableTimestamps.remove(chunk);
+        return wasDisabled;
+    }
+
+    /**
+     * Reaktiviert Mob Spawning in einem bestimmten Chunk
+     */
+    public boolean enableMobSpawningInChunk(Chunk chunk) {
+        boolean wasDisabled = disabledMobSpawningChunks.remove(chunk);
+        mobSpawningDisableTimestamps.remove(chunk);
+        return wasDisabled;
+    }
+
+    /**
+     * Gibt die Anzahl der Chunks mit deaktivierten Restrictions zurück
+     */
+    public int getDisabledRedstoneCount() {
+        return disabledRedstoneChunks.size();
+    }
+
+    public int getDisabledPlantGrowthCount() {
+        return disabledPlantGrowthChunks.size();
+    }
+
+    public int getDisabledMobSpawningCount() {
+        return disabledMobSpawningChunks.size();
+    }
+
+    /**
+     * Gibt alle Chunks mit deaktiviertem Redstone zurück
+     */
+    public Set<Chunk> getDisabledRedstoneChunks() {
+        return new HashSet<>(disabledRedstoneChunks);
+    }
+
+    public Set<Chunk> getDisabledPlantGrowthChunks() {
+        return new HashSet<>(disabledPlantGrowthChunks);
+    }
+
+    public Set<Chunk> getDisabledMobSpawningChunks() {
+        return new HashSet<>(disabledMobSpawningChunks);
     }
 
     /**

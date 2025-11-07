@@ -6,6 +6,9 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
 import java.io.File;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -16,6 +19,7 @@ public class WebPanelManager {
     private final RedstoneItemClear plugin;
     private final ApiClient apiClient;
     private boolean initialized = false;
+    private ScheduledExecutorService tpsReportExecutor;
 
     public WebPanelManager(RedstoneItemClear plugin) {
         this.plugin = plugin;
@@ -44,11 +48,26 @@ public class WebPanelManager {
             initialized = true;
             plugin.getLogger().info("✅ WebPanel initialized successfully");
 
-            // Start periodic TPS reporting (every 30 seconds)
-            Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, this::reportTps, 600L, 600L);
+            // Start TPS reporting on a separate thread pool (unaffected by server lag)
+            tpsReportExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread thread = new Thread(r, "RedstoneItemClear-TPS-Reporter");
+                thread.setDaemon(true);
+                return thread;
+            });
 
-            // Report user access every 5 minutes
+            // Report TPS every 5 seconds on dedicated thread (independent of server TPS)
+            tpsReportExecutor.scheduleAtFixedRate(() -> {
+                try {
+                    reportTps();
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Failed to report TPS: " + e.getMessage());
+                }
+            }, 5, 5, TimeUnit.SECONDS);
+
+            // Report user access every 5 minutes (can use normal scheduler)
             Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, this::reportUserAccess, 6000L, 6000L);
+
+            plugin.getLogger().info("✅ TPS reporting started on dedicated thread (independent of server lag)");
         } else {
             plugin.getLogger().warning("⚠️ Failed to register server with API - WebPanel features disabled");
         }
@@ -135,7 +154,8 @@ public class WebPanelManager {
         if (!initialized) return;
 
         try {
-            double tps = Bukkit.getTPS()[0]; // 1-minute average
+            // Use TPSMonitor to get LIVE TPS (not cached) for accurate reporting
+            double tps = plugin.getTpsMonitor().getLiveTPS();
             int playersOnline = Bukkit.getOnlinePlayers().size();
             int chunksLoaded = Bukkit.getWorlds().stream()
                     .mapToInt(w -> w.getLoadedChunks().length)
@@ -181,5 +201,23 @@ public class WebPanelManager {
 
     public boolean isInitialized() {
         return initialized;
+    }
+
+    /**
+     * Shutdown web panel manager and cleanup resources
+     */
+    public void shutdown() {
+        if (tpsReportExecutor != null && !tpsReportExecutor.isShutdown()) {
+            plugin.getLogger().info("Stopping TPS reporter thread...");
+            tpsReportExecutor.shutdown();
+            try {
+                if (!tpsReportExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    tpsReportExecutor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                tpsReportExecutor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 }

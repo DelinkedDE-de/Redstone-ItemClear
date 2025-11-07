@@ -11,6 +11,7 @@ import de.delinkedde.redstoneItemClear.manager.PerformanceManager;
 import de.delinkedde.redstoneItemClear.monitor.TPSMonitor;
 import de.delinkedde.redstoneItemClear.webpanel.WebPanelManager;
 import de.delinkedde.redstoneItemClear.command.WebPanelCommand;
+import de.delinkedde.redstoneItemClear.bungee.BungeeMessenger;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -37,6 +38,7 @@ public final class RedstoneItemClear extends JavaPlugin {
     private PerformanceManager performanceManager;
     private LagTestCommand lagTestCommand;
     private WebPanelManager webPanelManager;
+    private BungeeMessenger bungeeMessenger;
 
     @Override
     public void onEnable() {
@@ -83,6 +85,11 @@ public final class RedstoneItemClear extends JavaPlugin {
             lagTestCommand.stopAllLag();
         }
 
+        // Stoppe WebPanel Manager
+        if (webPanelManager != null) {
+            webPanelManager.shutdown();
+        }
+
         getLogger().info("✓ Plugin erfolgreich deaktiviert!");
     }
 
@@ -120,6 +127,10 @@ public final class RedstoneItemClear extends JavaPlugin {
         // WebPanel Manager
         webPanelManager = new WebPanelManager(this);
         webPanelManager.initialize();
+
+        // Bungee messaging (register/heartbeat/unregister)
+        bungeeMessenger = new BungeeMessenger(this);
+        bungeeMessenger.initialize();
 
         getLogger().info("✓ Komponenten initialisiert");
     }

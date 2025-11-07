@@ -519,8 +519,16 @@ webpanel:
   api-url: "https://delinkedde.de/api/minecraft"
   # Server Hostname/IP (wie Spieler sich verbinden)
   hostname: "play.delinkedde.de"
-  # Server Anzeigename im Dashboard
-  display-name: "Mein Minecraft Server"
+  # Server Anzeigename im Dashboard (optional)
+  # Wenn leer: verwendet automatisch den bungee-name (z.B. "Lobby")
+  # Beispiel: "Lobby Server" oder "Survival World"
+  display-name: ""
+  # BungeeCord Server Name (nur für Multi-Server Setups)
+  # Dies ist der Name in BungeeCord's config.yml unter servers:
+  # Beispiel: Wenn in BungeeCord config.yml "lobby:" steht, dann "lobby" hier eintragen
+  # Wichtig: Muss EXAKT dem BungeeCord Server-Namen entsprechen!
+  # Wird auch als Display-Name verwendet wenn display-name leer ist
+  bungee-name: ""
   # API Key (wird automatisch generiert beim ersten Start)
   api-key: ""
   # Server ID (wird automatisch generiert)

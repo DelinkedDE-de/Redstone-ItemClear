@@ -83,14 +83,35 @@ public class ApiClient {
     public boolean registerServer() {
         try {
             String hostname = plugin.getConfig().getString("webpanel.hostname", "localhost");
+            String displayNameCfg = plugin.getConfig().getString("webpanel.display-name", "");
+            if (displayNameCfg == null) displayNameCfg = "";
+
+            // Get the BungeeCord server name this server is known as (for multi-server setups)
+            // This is the name in BungeeCord's config.yml servers: section
+            String bungeeName = plugin.getConfig().getString("webpanel.bungee-name", "");
+
+            // Auto-generate display name: use bungee-name if available, otherwise from config or server.properties
+            String displayName;
+            if (!displayNameCfg.isBlank()) {
+                displayName = displayNameCfg;
+            } else if (bungeeName != null && !bungeeName.isEmpty()) {
+                // Capitalize first letter of bungee name (lobby -> Lobby)
+                displayName = bungeeName.substring(0, 1).toUpperCase() + bungeeName.substring(1);
+            } else {
+                displayName = getServerNameFromProperties().orElse("Minecraft Server");
+            }
 
             JsonObject payload = new JsonObject();
             payload.addProperty("serverId", serverId);
             payload.addProperty("hostname", hostname);
-            payload.addProperty("displayName", plugin.getConfig().getString("webpanel.display-name", "Minecraft Server"));
+            payload.addProperty("displayName", displayName);
             payload.addProperty("version", Bukkit.getVersion());
-            payload.addProperty("isBungeecord", isBungeeCordMode());
+            // Spigot/Paper servers are NEVER BungeeCord proxies (only the actual BungeeCord is)
+            payload.addProperty("isBungeecord", false);
             payload.addProperty("onlineMode", Bukkit.getOnlineMode());
+            if (bungeeName != null && !bungeeName.isEmpty()) {
+                payload.addProperty("bungeeName", bungeeName);
+            }
 
             JsonObject response = sendPostRequest(apiUrl + "/servers/register", payload, null);
 
@@ -113,6 +134,23 @@ public class ApiClient {
             plugin.getLogger().severe("Failed to register server: " + e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * Try to read server-name from server.properties
+     */
+    private java.util.Optional<String> getServerNameFromProperties() {
+        try {
+            java.io.File f = new java.io.File("server.properties");
+            if (!f.exists()) return java.util.Optional.empty();
+            java.util.Properties props = new java.util.Properties();
+            try (java.io.FileInputStream in = new java.io.FileInputStream(f)) {
+                props.load(in);
+            }
+            String name = props.getProperty("server-name");
+            if (name != null && !name.isBlank()) return java.util.Optional.of(name.trim());
+        } catch (Exception ignored) {}
+        return java.util.Optional.empty();
     }
 
     /**
@@ -194,27 +232,28 @@ public class ApiClient {
      * Update user access (send to API)
      */
     public void updateUserAccess(String uuid, String username) {
-        // This is handled by periodic bulk updates in WebPanelManager
-    }
-
-    /**
-     * Check if server is running in BungeeCord mode
-     */
-    private boolean isBungeeCordMode() {
         try {
-            java.io.File spigotConfig = new java.io.File("spigot.yml");
-            if (!spigotConfig.exists()) {
-                return false;
+            if (apiKey == null) {
+                apiKey = plugin.getConfig().getString("webpanel.api-key");
+                if (apiKey == null) return;
             }
 
-            org.bukkit.configuration.file.YamlConfiguration config =
-                org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(spigotConfig);
-            return config.getBoolean("settings.bungeecord", false);
+            JsonObject userObj = new JsonObject();
+            userObj.addProperty("uuid", uuid);
+            userObj.addProperty("username", username);
+
+            JsonObject payload = new JsonObject();
+            com.google.gson.JsonArray arr = new com.google.gson.JsonArray();
+            arr.add(userObj);
+            payload.add("users", arr);
+
+            // This will attribute access to THIS server via its API key
+            sendPostRequest(apiUrl + "/users/bulk-access", payload, apiKey);
         } catch (Exception e) {
-            plugin.getLogger().warning("Could not read spigot.yml: " + e.getMessage());
-            return false;
+            plugin.getLogger().fine("Failed to update user access: " + e.getMessage());
         }
     }
+
 
     /**
      * Send POST request to API

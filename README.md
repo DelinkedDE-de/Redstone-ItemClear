@@ -167,11 +167,95 @@ action-levels:
 |---------|--------------|------------|
 | `/ric status` | Zeigt den aktuellen TPS-Status | `redstoneitemclear.status` |
 | `/ric analyze` | Analysiert und zeigt Problemzonen | `redstoneitemclear.analyze` |
+| `/ric run <type>` | Manuelle Bereinigung von Problemzonen | `redstoneitemclear.run` |
+| `/ric enable <type> [all]` | Aktiviert Einschränkungen wieder | `redstoneitemclear.enable` |
 | `/ric reload` | Lädt die Konfiguration neu | `redstoneitemclear.reload` |
 | `/ric info` | Plugin-Informationen | - |
 | `/ric help` | Zeigt die Hilfe | - |
 
 **Aliases:** `/redstoneitemclear`, `/riclear`
+
+### `/ric run` - Manuelle Bereinigung
+
+Führt manuelle Bereinigung in Problemzonen **UND** geladenen Chunks um Spieler durch:
+
+| Syntax | Beschreibung |
+|--------|--------------|
+| `/ric run items` | Entfernt Items aus allen Chunks |
+| `/ric run mobs` | Entfernt Mobs aus allen Chunks |
+| `/ric run redstone` | Deaktiviert Redstone in allen Chunks |
+| `/ric run plant` | Stoppt Pflanzenwachstum in allen Chunks |
+| `/ric run all` | Führt alle Bereinigungen durch |
+| `/ric run mobs,items` | Mehrere Optionen kombiniert (komma-getrennt) |
+
+**Beispiele:**
+```
+/ric run items              # Nur Items entfernen
+/ric run mobs,items         # Mobs und Items entfernen
+/ric run all                # Komplette Bereinigung
+```
+
+**Was wird gescannt:**
+1. **Problemzonen** vom automatischen Analyzer (Chunks die Thresholds überschreiten)
+2. **Geladene Chunks** im 8-Chunk Radius um ALLE Online-Spieler
+3. Beide Listen werden kombiniert (keine Duplikate)
+
+**Ausgabe:**
+```
+Scanne 150 Chunks (25 Problemzonen + 125 Spieler-Chunks)...
+Entferne Mobs aus 87 Chunks...
+Mobs entfernt: 2459
+Chunks gescannt: 150
+Aktuelle TPS: 19.45
+```
+
+**Wichtig:** Entity-Removal läuft auf Main-Thread für maximale Stabilität!
+
+### `/ric enable` - Einschränkungen reaktivieren
+
+Aktiviert temporär deaktivierte Chunk-Einschränkungen (Redstone, Pflanzenwachstum, Mob-Spawning) wieder.
+
+**Syntax:**
+```
+/ric enable <type> [all]
+```
+
+**Typen:**
+
+| Typ | Beschreibung |
+|-----|--------------|
+| `all` | Aktiviert alle Einschränkungen wieder |
+| `redstone` | Aktiviert Redstone wieder |
+| `plant` | Aktiviert Pflanzenwachstum wieder |
+| `mobs` | Aktiviert Mob-Spawning wieder |
+
+**Bereiche:**
+
+| Bereich | Beschreibung |
+|---------|--------------|
+| Ohne `all` | **Nur Chunks im 8-Chunk Radius** um den Spieler |
+| Mit `all` | **ALLE Chunks** auf dem gesamten Server |
+
+**Beispiele:**
+```
+/ric enable redstone            # Redstone in Spieler-Nähe aktivieren
+/ric enable redstone all        # Redstone server-weit aktivieren
+/ric enable plant              # Pflanzenwachstum in Spieler-Nähe aktivieren
+/ric enable all                # Alle Einschränkungen in Spieler-Nähe aufheben
+/ric enable all all            # Alle Einschränkungen server-weit aufheben
+```
+
+**Ausgabe:**
+```
+Redstone in 12 Chunks wurde reaktiviert
+Redstone in 0 Chunks war bereits aktiv
+Gesamt: 12 Chunks untersucht
+```
+
+**Wichtig:**
+- Einschränkungen sind nur im RAM gespeichert
+- Nach Server-Restart sind automatisch ALLE Einschränkungen aufgehoben
+- Tab-Completion verfügbar für alle Parameter
 
 ### Lag-Test Commands (Development/Testing)
 
@@ -194,9 +278,12 @@ action-levels:
 | `redstoneitemclear.*` | Alle Permissions | OP |
 | `redstoneitemclear.status` | Status-Command | OP |
 | `redstoneitemclear.analyze` | Analyze-Command | OP |
+| `redstoneitemclear.run` | Run-Command (Manuelle Bereinigung) | OP |
+| `redstoneitemclear.enable` | Enable-Command (Einschränkungen aufheben) | OP |
 | `redstoneitemclear.reload` | Reload-Command | OP |
 | `redstoneitemclear.notifications` | In-Game-Benachrichtigungen | OP |
 | `redstoneitemclear.lagtest` | Lag-Test Commands (Development) | OP |
+| `redstoneitemclear.webpanel` | Zugriff auf WebPanel Dashboard | OP |
 
 ## Funktionsweise
 
@@ -323,23 +410,62 @@ src/main/java/de/delinkedde/redstoneItemClear/
 - **API-Version:** 1.21
 - **Build-Tool:** Gradle 8.8
 
-## Features
+## Web-Dashboard Integration
 
-### ✅ Web-Dashboard
-- Live TPS-Monitoring mit Grafiken (Stunde/Tag/Woche)
-- Multi-Server Dashboard
-- Problem Zones Visualisierung mit Koordinaten
-- Sichere Authentifizierung mit In-Game Verifizierung
-- WebSocket Live-Updates
+### ✅ Implementierte Features
+- **Live TPS-Monitoring** mit Grafiken (Stunde/Tag/Woche)
+- **Multi-Server Dashboard** - Ein Login für alle Server!
+- **Problem Zones Visualisierung** mit Koordinaten
+- **Sichere Authentifizierung** mit In-Game Verifizierung
+- **WebSocket Live-Updates** für Echtzeit-Daten
+- **BungeeCord Support** - Zentrale Verifizierung für alle Backend-Server
 
-**URLs:**
-- Login: `https://delinkedde.de/minecraft-login.html`
-- Dashboard: `https://delinkedde.de/minecraft-dashboard.html`
+### 🔐 WebPanel Authentifizierung
+
+**Für Spieler mit `redstoneitemclear.webpanel` Permission:**
+
+1. **Login-Seite öffnen:** `https://delinkedde.de/minecraft-login.html`
+2. **Minecraft-Username eingeben** (z.B. `DelinkedDE`)
+3. **Verifizierungs-Code erhalten** (z.B. `AB12CD`)
+4. **In-Game verifizieren:**
+   ```
+   /ricpanel verify AB12CD
+   ```
+   *Hinweis: Bei BungeeCord-Setup den Command `/ricbungee verify AB12CD` verwenden!*
+5. **Automatisch zum Dashboard weitergeleitet** → `https://delinkedde.de/minecraft-dashboard.html`
+
+**WebPanel Commands:**
+
+| Command | Beschreibung |
+|---------|--------------|
+| `/ricpanel verify <code>` | Code vom WebPanel verifizieren |
+| `/ricpanel info` | Zeigt Account-Info & Anleitung |
+| `/ricpanel help` | Zeigt Hilfe |
+
+### 🌐 Multi-Server Setup (BungeeCord)
+
+**Für BungeeCord Networks:**
+1. **BungeeCord Plugin** installieren: `Redstone-ItemClear-Bungee`
+2. **Backend-Server** konfigurieren mit `bungee-name`:
+   ```yaml
+   webpanel:
+     bungee-name: "lobby"  # Name aus BungeeCord config.yml
+     display-name: ""      # Optional, wird auto-generiert aus bungee-name
+   ```
+3. **Einmalige Verifizierung** mit `/ricbungee verify <code>` auf BELIEBIGEM Server
+4. **Zugriff auf ALLE Server** im Dashboard wo Permission vorhanden ist
+
+**Vorteile:**
+- ✅ Ein Login für alle Backend-Server
+- ✅ Automatische Server-Erkennung
+- ✅ Zentrale Permission-Verwaltung
+- ✅ Server-Namen werden automatisch aus BungeeCord übernommen
 
 ### 🔜 Geplante Features
 - WorldGuard-Integration
 - PlotSquared-Integration
 - Erweiterte Statistik-Logs
+- Export-Funktionen für Reports
 
 ## Support
 
